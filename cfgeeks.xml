@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+    <channel>
+        <title>The Central Florida Geeks</title>
+        <description>TBD</description>
+        <link>http://www.cfgeeks.org</link>
+        <docs>http://blogs.law.harvard.edu/tech/rss</docs>
+        <lastBuildDate>Fri, 17 Apr 2015 15:50:39 -0400</lastBuildDate>
+        <pubDate>Mon, 20 Apr 2015 18:00:30 -0400</pubDate>
+        <generator>FeedForAll v2.0 (2.0.4.0) unlicensed version http://www.feedforall.com</generator>
+        <item>
+            <title>Episode 1</title>
+            <description>Priming the Pump</description>
+            <link>http://www.kc4zvw.us/pods/ep1.mp3</link>
+            <guid isPermaLink="false">C643EAE6-4E80-4D3A-A2D4-DA8A142FDBB0</guid>
+            <pubDate>Mon, 20 Apr 2015 18:00:30 -0400</pubDate>
+        </item>
+    </channel>
+</rss>

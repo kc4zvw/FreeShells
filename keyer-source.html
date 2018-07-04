@@ -1,0 +1,899 @@
+<pre>
+
+<span style="color: #7E7E7E;">/*</span>
+<span style="color:
+#7E7E7E;">&nbsp;&nbsp;Based&nbsp;on&nbsp;code&nbsp;written&nbsp;by&nbsp;Mark&nbsp;VandeWettering,&nbsp;K6HX,&nbsp;as&nbsp;found&nbsp;on&nbsp;his&nbsp;web&nbsp;site:</span>
+<span style="color: #7E7E7E;">&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;http://brainwagon.org/2012/01/21/an-arduino-powered-ibm-ps2-morse-keyboard/</span>
+<span style="color: #7E7E7E;">&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;You&nbsp;need&nbsp;four&nbsp;connections&nbsp;from&nbsp;the&nbsp;PS2&nbsp;keyboard:&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;</span>
+<span style="color:
+#7E7E7E;">&nbsp;5V&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Connects&nbsp;to&nbsp;pin&nbsp;4&nbsp;of&nbsp;the&nbsp;PS2&nbsp;connector&nbsp;(and&nbsp;to&nbsp;5v&nbsp;on&nbsp;the&nbsp;Arduino&nbsp;board)</span>
+<span style="color:
+#7E7E7E;">&nbsp;ground&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(and&nbsp;to&nbsp;GND&nbsp;on&nbsp;the&nbsp;Arduino&nbsp;board)</span>
+<span style="color:
+#7E7E7E;">&nbsp;clock&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(and&nbsp;to&nbsp;pin&nbsp;3&nbsp;on&nbsp;the&nbsp;Arduino&nbsp;board)</span>
+<span style="color:
+#7E7E7E;">&nbsp;data&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(&nbsp;&nbsp;&nbsp;&nbsp;"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span>
+<span style="color: #7E7E7E;">&nbsp;</span>
+<span style="color:
+#7E7E7E;">&nbsp;Pins&nbsp;2&nbsp;and&nbsp;6&nbsp;of&nbsp;the&nbsp;PS2&nbsp;connector&nbsp;are&nbsp;not&nbsp;used.&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;Modified&nbsp;by&nbsp;Dr.&nbsp;Jack&nbsp;Purdum,&nbsp;W8TEE,&nbsp;Dec.&nbsp;23,&nbsp;2014</span>
+<span style="color: #7E7E7E;">&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*/</span>
+
+<span style="color: #7E7E7E;">//&nbsp;Version&nbsp;for&nbsp;the&nbsp;PS2&nbsp;Keyboard</span>
+<span style="color:
+#7E7E7E;">//&nbsp;using&nbsp;the&nbsp;library&nbsp;from&nbsp;http://www.pjrc.com/teensy/td_libs_PS2Keyboard.html</span>
+
+#include&nbsp;&lt;<span style="color: #CC6600;">PS2Keyboard</span>.h&gt;    <span style="color: #7E7E7E;">// See above</span>
+#include&nbsp;&lt;<span style="color: #CC6600;">Wire</span>.h&gt;           <span style="color: #7E7E7E;">// Comes with Arduino
+IDE</span>
+<span style="color: #7E7E7E;">//&nbsp;Get&nbsp;the&nbsp;LCD&nbsp;I2C&nbsp;Library&nbsp;here:&nbsp;</span>
+<span style="color: #7E7E7E;">//&nbsp;https://bitbucket.org/fmalpartida/new-liquidcrystal/downloads</span>
+<span style="color:
+#7E7E7E;">//&nbsp;Move&nbsp;any&nbsp;other&nbsp;LCD&nbsp;libraries&nbsp;to&nbsp;another&nbsp;folder&nbsp;or&nbsp;delete&nbsp;them</span>
+<span style="color: #7E7E7E;">//&nbsp;See&nbsp;Library&nbsp;"Docs"&nbsp;folder&nbsp;for&nbsp;possible&nbsp;commands&nbsp;etc.</span>
+#include&nbsp;&lt;<span style="color: #CC6600;">LiquidCrystal_I2C</span>.h&gt;
+
+<span style="color: #7E7E7E;">/*-----(&nbsp;Declare&nbsp;Constants&nbsp;)-----*/</span>
+<span style="color: #7E7E7E;">/*-----(&nbsp;Deefine&nbsp;objects&nbsp;)-----*/</span>
+<span style="color:
+#7E7E7E;">//&nbsp;set&nbsp;the&nbsp;LCD&nbsp;address&nbsp;to&nbsp;0x27&nbsp;for&nbsp;a&nbsp;20&nbsp;chars&nbsp;4&nbsp;line&nbsp;display</span>
+<span style="color:
+#7E7E7E;">//&nbsp;Set&nbsp;the&nbsp;pins&nbsp;on&nbsp;the&nbsp;I2C&nbsp;chip&nbsp;used&nbsp;for&nbsp;LCD&nbsp;connections:</span>
+<span style="color:
+#7E7E7E;">//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;addr,&nbsp;en,rw,rs,d4,d5,d6,d7,bl,blpol</span>
+<span style="color: #CC6600;">LiquidCrystal_I2C</span> lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  <span style="color:
+#7E7E7E;">// Set the LCD I2C address</span>
+
+#define&nbsp;DEBUG&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:
+#7E7E7E;">// For debugging statements. Comment out when </span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+style="color: #7E7E7E;">// not debugging and reduce code size</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+#define&nbsp;CHARSONLY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">// Only show
+characters, not code</span>
+
+#define&nbsp;PS2CLOCKPIN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3
+#define&nbsp;PS2DATAPIN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4
+
+
+#define&nbsp;SIDETONEFREQ&nbsp;&nbsp;&nbsp;&nbsp;700
+#define&nbsp;ESCAPEKEY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;27
+#define&nbsp;PERCENTKEY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;37
+#define&nbsp;BACKSPACE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;127&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:
+#7E7E7E;">// NOTE: This should be 0x08, but my keyboard sees it as 0x7F??</span>
+#define&nbsp;NEWLINE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #006699;">'\n'</span>
+
+#define&nbsp;LEDPIN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;13
+#define&nbsp;TONEPIN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;10&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+style="color: #7E7E7E;">// Used if you want sidetone via a small buzzer</span>
+#define&nbsp;LCDROWSIZE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2
+#define&nbsp;LCDCOLSIZE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;16
+
+#define&nbsp;QUEUESIZE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;128
+#define&nbsp;QUEUEMASK&nbsp;(QUEUESIZE-1)
+
+#define&nbsp;DEFAULTWPM	15	<span style="color: #7E7E7E;">// MIN_WPM &lt;= DEFAULT_WPM &lt;= MAX_WPM</span>
+#define	MINWPM		&nbsp;5
+#define&nbsp;MAXWPM		50
+#define&nbsp;NOCHARAVAILABLE&nbsp;-1
+<span style="color:
+#7E7E7E;">//&nbsp;=========================&nbsp;Global&nbsp;data&nbsp;definitions&nbsp;=====================</span>
+
+<span style="color:
+#7E7E7E;">//&nbsp;The&nbsp;coded&nbsp;byte&nbsp;values&nbsp;for&nbsp;the&nbsp;letters&nbsp;of&nbsp;the&nbsp;alphabet.</span>
+<span style="color: #CC6600;">char</span> ltab[] = {
+&nbsp;&nbsp;0b101,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:
+#7E7E7E;">// A</span>
+&nbsp;&nbsp;0b11000,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">// B
+</span>
+&nbsp;&nbsp;0b11010,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+C</span>
+&nbsp;&nbsp;0b1100,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+D</span>
+&nbsp;&nbsp;0b10,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:
+#7E7E7E;">// E</span>
+&nbsp;&nbsp;0b10010,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+F</span>
+&nbsp;&nbsp;0b1110,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+G</span>
+&nbsp;&nbsp;0b10000,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+H</span>
+&nbsp;&nbsp;0b100,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:
+#7E7E7E;">// I</span>
+&nbsp;&nbsp;0b10111,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+J</span>
+&nbsp;&nbsp;0b1101,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+K</span>
+&nbsp;&nbsp;0b10100,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+L</span>
+&nbsp;&nbsp;0b111,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:
+#7E7E7E;">// M</span>
+&nbsp;&nbsp;0b110,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:
+#7E7E7E;">// N</span>
+&nbsp;&nbsp;0b1111,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+O</span>
+&nbsp;&nbsp;0b10110,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+P</span>
+&nbsp;&nbsp;0b11101,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+Q</span>
+&nbsp;&nbsp;0b1010,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+R</span>
+&nbsp;&nbsp;0b1000,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+S</span>
+&nbsp;&nbsp;0b11,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:
+#7E7E7E;">// T</span>
+&nbsp;&nbsp;0b1001,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+U</span>
+&nbsp;&nbsp;0b10001,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+V</span>
+&nbsp;&nbsp;0b1011,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+W</span>
+&nbsp;&nbsp;0b11001,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+X</span>
+&nbsp;&nbsp;0b11011,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+Y</span>
+&nbsp;&nbsp;0b11100&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+Z</span>
+};
+
+<span style="color:
+#7E7E7E;">//&nbsp;The&nbsp;coded&nbsp;byte&nbsp;values&nbsp;for&nbsp;numbers.&nbsp;See&nbsp;text&nbsp;for&nbsp;explanation</span>
+
+<span style="color: #CC6600;">char</span> ntab[] = {
+&nbsp;&nbsp;0b111111,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">// 0</span>
+&nbsp;&nbsp;0b101111,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">// 1</span>
+&nbsp;&nbsp;0b100111,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">// 2</span>
+&nbsp;&nbsp;0b100011,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">// 3</span>
+&nbsp;&nbsp;0b100001,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">// 4</span>
+&nbsp;&nbsp;0b100000,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">// 5</span>
+&nbsp;&nbsp;0b110000,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">// 6</span>
+&nbsp;&nbsp;0b111000,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">// 7</span>
+&nbsp;&nbsp;0b111100,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">// 8</span>
+&nbsp;&nbsp;0b111110&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//
+9</span>
+};
+
+
+<span style="color: #CC6600;">char</span> buff[QUEUESIZE];
+<span style="color: #CC6600;">char</span> buffFullError[] = <span style="color: #006699;">"== Buffer Full =="</span>;
+<span style="color: #CC6600;">char</span> charsLeftMsg[] = <span style="color: #006699;">"chars left:"</span>;
+<span style="color: #CC6600;">byte</span> lcdColPosition;
+<span style="color: #CC6600;">byte</span> bufferActive;
+
+<span style="color: #CC6600;">int</span> aborted = 0;
+<span style="color: #CC6600;">int</span> bufferHead = 0;
+<span style="color: #CC6600;">int</span> bufferTail = 0;
+<span style="color: #CC6600;">int</span> charsLeft;
+<span style="color: #CC6600;">int</span> charCount = 0;
+
+<span style="color: #CC6600;">int</span> wordsPerMinute = DEFAULTWPM;         <span style="color: #7E7E7E;">// Default speed</span>
+<span style="color: #CC6600;">boolean</span> sideTone = <span style="color: #CC6600;">false</span>;                <span
+style="color: #7E7E7E;">// Default is no sidetone</span>
+<span style="color: #CC6600;">boolean</span>	speedChange = <span style="color: #CC6600;">false</span>;	         <span
+style="color: #7E7E7E;">// 'true' indicates speed change requested</span>
+
+<span style="color: #CC6600;">int</span> ditlen = 1200 / wordsPerMinute;
+
+<span style="color: #CC6600;">PS2Keyboard</span> kbd;        <span style="color: #7E7E7E;">// Define keyboard object</span>
+
+<span style="color: #CC6600;">void</span> <span style="color: #CC6600;"><b>setup</b></span>()
+{
+&nbsp;&nbsp;<span style="color: #CC6600;">pinMode</span>(LEDPIN, <span style="color: #006699;">OUTPUT</span>);
+&nbsp;&nbsp;<span style="color: #CC6600;">pinMode</span>(TONEPIN, <span style="color: #006699;">OUTPUT</span>);
+&nbsp;&nbsp;
+&nbsp;&nbsp;kbd.<span style="color: #CC6600;">begin</span>(PS2DATAPIN, PS2CLOCKPIN);
+&nbsp;&nbsp;lcd.<span style="color: #CC6600;">begin</span>(LCDCOLSIZE, LCDROWSIZE);   <span style="color: #7E7E7E;">// initialize
+the lcd for 16 chars 2 lines, turn on backlight</span>
+&nbsp;&nbsp;
+&nbsp;&nbsp;lcd.setCursor(2,0);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+style="color: #7E7E7E;">// Splash screen</span>
+&nbsp;&nbsp;lcd.<span style="color: #CC6600;">print</span>(<span style="color: #006699;">"PS2 Keyboard"</span>);
+&nbsp;&nbsp;lcd.setCursor(6,1);
+&nbsp;&nbsp;lcd.<span style="color: #CC6600;">print</span>(<span style="color: #006699;">"W8TEE"</span>);
+&nbsp;&nbsp;<span style="color: #CC6600;">delay</span>(2000);  
+<span style="color: #7E7E7E;">//&nbsp;&nbsp;lcd.clear();</span>
+&nbsp;&nbsp;lcdColPosition&nbsp;=&nbsp;0;
+&nbsp;&nbsp;
+#ifdef&nbsp;DEBUG
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">begin</span>(115200);
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">println</span>(<span style="color:
+#006699;">"PS2 keyboard ready:"</span>); 
+#endif
+&nbsp;&nbsp;bufferActive&nbsp;=&nbsp;0;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">// Assume no buffering </span>
+}
+
+<span style="color: #CC6600;">void</span> <span style="color: #CC6600;"><b>loop</b></span>()
+{
+&nbsp;&nbsp;ps2poll();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+style="color: #7E7E7E;">// Look for a keystroke</span>
+
+&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (bufferHead != bufferTail) {     <span style="color: #7E7E7E;">// If there's a
+keystroke present in the buffer...</span>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">send</span>(BufferPopCharacter());       <span style="color: #7E7E7E;">//
+...send it along.</span>
+&nbsp;&nbsp;}&nbsp;&nbsp;
+}
+
+<span style="color: #7E7E7E;">/*****</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;This&nbsp;method&nbsp;adds&nbsp;a&nbsp;character&nbsp;to&nbsp;the&nbsp;buffer.</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Parameters:</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;char&nbsp;ch&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;character&nbsp;to&nbsp;add</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Return&nbsp;value:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*****/</span>
+<span style="color: #CC6600;">void</span> BufferAdd(<span style="color: #CC6600;">char</span> ch)
+{
+&nbsp;&nbsp;buff[bufferTail++]&nbsp;=&nbsp;ch;
+&nbsp;&nbsp;bufferTail&nbsp;&amp;=&nbsp;QUEUEMASK;&nbsp;&nbsp;&nbsp;
+}
+
+<span style="color: #7E7E7E;">/*****</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;This&nbsp;method&nbsp;adds&nbsp;a&nbsp;character&nbsp;to&nbsp;the&nbsp;buffer.&nbsp;See&nbsp;text&nbsp;as&nbsp;to&nbsp;how&nbsp;this&nbsp;method&nbsp;shares&nbsp;the&nbsp;same&nbsp;method&nbsp;name&nbsp;as</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;the&nbsp;one&nbsp;above&nbsp;without&nbsp;creating&nbsp;a&nbsp;duplicate&nbsp;definition&nbsp;error</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Parameters:</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;char&nbsp;ch&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;character&nbsp;to&nbsp;add</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Return&nbsp;value:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;&nbsp;CAUTION:&nbsp;If&nbsp;any&nbsp;part&nbsp;of&nbsp;an&nbsp;existing&nbsp;message&nbsp;is&nbsp;in&nbsp;the&nbsp;buufer&nbsp;when&nbsp;this&nbsp;function&nbsp;is&nbsp;called,&nbsp;it&nbsp;is&nbsp;lost.</span>
+<span style="color: #7E7E7E;">&nbsp;*****/</span>
+<span style="color: #CC6600;">void</span> BufferAdd(<span style="color: #CC6600;">char</span> *s)
+{
+
+&nbsp;&nbsp;<span style="color: #CC6600;">int</span> len;
+&nbsp;&nbsp;len&nbsp;=&nbsp;strlen(s);
+&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (len &gt; QUEUEMASK) { <span style="color: #7E7E7E;">// If the message is too
+long, kill it.</span>
+&nbsp;&nbsp;&nbsp;&nbsp;*s&nbsp;=&nbsp;<span style="color: #006699;">'\0'</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">return</span>;
+&nbsp;&nbsp;}
+&nbsp;&nbsp;BufferReset();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">// Override anything
+in buffer  </span>
+&nbsp;&nbsp;<span style="color: #CC6600;">while</span> (*s)
+&nbsp;&nbsp;&nbsp;&nbsp;BufferAdd(*s++);
+}
+
+<span style="color: #7E7E7E;">/*****</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;This&nbsp;method&nbsp;removes&nbsp;a&nbsp;character&nbsp;from&nbsp;the&nbsp;buffer.</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Parameters:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Return&nbsp;value:</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;char&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;character&nbsp;that&nbsp;is&nbsp;copied&nbsp;from&nbsp;the&nbsp;buffer</span>
+<span style="color: #7E7E7E;">&nbsp;*****/</span>
+<span style="color: #CC6600;">char</span> BufferPopCharacter()
+{
+&nbsp;&nbsp;<span style="color: #CC6600;">char</span> ch;
+&nbsp;&nbsp;ch&nbsp;=&nbsp;buff[bufferHead++];
+&nbsp;&nbsp;bufferHead&nbsp;&amp;=&nbsp;QUEUEMASK;
+&nbsp;&nbsp;<span style="color: #CC6600;">return</span> ch;
+}
+
+
+<span style="color: #7E7E7E;">/*****</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;This&nbsp;method&nbsp;reset&nbsp;the&nbsp;buffer.</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Parameters:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Return&nbsp;value:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*****/</span>
+<span style="color: #CC6600;">void</span> BufferReset()
+{
+&nbsp;&nbsp;bufferHead&nbsp;=&nbsp;0;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+style="color: #7E7E7E;">// Reset to first character in buffer</span>
+&nbsp;&nbsp;bufferTail&nbsp;=&nbsp;0;
+&nbsp;&nbsp;charCount&nbsp;=&nbsp;0;
+&nbsp;&nbsp;memset(buff,&nbsp;0,&nbsp;QUEUESIZE);&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">// Fast clear of previous
+contents</span>
+&nbsp;&nbsp;lcdColPosition&nbsp;=&nbsp;0;
+&nbsp;&nbsp;lcd.clear();
+&nbsp;&nbsp;lcd.setCursor(0,&nbsp;0);
+&nbsp;&nbsp;lcd.<span style="color: #CC6600;">write</span>(charsLeftMsg);
+
+}
+
+<span style="color: #7E7E7E;">/*****</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;This&nbsp;function&nbsp;lets&nbsp;you&nbsp;observe&nbsp;the&nbsp;keystrokes&nbsp;as&nbsp;they&nbsp;are&nbsp;sent.&nbsp;With&nbsp;buzzer,&nbsp;it</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;syncs&nbsp;with&nbsp;display.</span>
+<span style="color: #7E7E7E;">&nbsp;*</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Parameters:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Return&nbsp;value:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*****/</span>
+
+<span style="color: #CC6600;">void</span> ShowKeystrokes(<span style="color: #CC6600;">char</span> ch)
+{
+&nbsp;&nbsp;<span style="color: #CC6600;">static</span> <span style="color: #CC6600;">char</span> tempBuffer[LCDCOLSIZE + 1];
+&nbsp;&nbsp;
+&nbsp;&nbsp;ch&nbsp;=&nbsp;toupper(ch);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+style="color: #7E7E7E;">// Don't mess with lower case</span>
+&nbsp;&nbsp;charsLeft&nbsp;=&nbsp;QUEUESIZE&nbsp;-&nbsp;bufferTail;&nbsp;&nbsp;<span style="color: #7E7E7E;">// How much buffer
+space left?</span>
+&nbsp;&nbsp;lcd.setCursor(0,&nbsp;0);
+&nbsp;&nbsp;lcd.<span style="color: #CC6600;">write</span>(charsLeftMsg); 
+&nbsp;&nbsp;lcd.<span style="color: #CC6600;">write</span>(<span style="color: #006699;">"   "</span>);
+&nbsp;&nbsp;lcd.setCursor(11,&nbsp;0);
+&nbsp;&nbsp;lcd.<span style="color: #CC6600;">print</span>(charsLeft);    
+&nbsp;&nbsp;
+&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (lcdColPosition &lt; LCDCOLSIZE) {    <span style="color: #7E7E7E;">// If we
+haven't shown col-size characters (e.g., 16)</span>
+&nbsp;&nbsp;&nbsp;&nbsp;tempBuffer[lcdColPosition]&nbsp;=&nbsp;ch;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">// just put
+them on the screen</span>
+&nbsp;&nbsp;&nbsp;&nbsp;lcd.setCursor(lcdColPosition++,&nbsp;1);
+&nbsp;&nbsp;&nbsp;&nbsp;lcd.<span style="color: #CC6600;">write</span>(ch);
+&nbsp;&nbsp;}&nbsp;<span style="color: #CC6600;">else</span> {                              <span style="color: #7E7E7E;">// If we
+have shown more, scroll the message as the chars come in</span>
+&nbsp;&nbsp;&nbsp;&nbsp;memmove(tempBuffer,&nbsp;&amp;tempBuffer[1],&nbsp;LCDCOLSIZE);
+&nbsp;&nbsp;&nbsp;&nbsp;tempBuffer[LCDCOLSIZE&nbsp;-&nbsp;1]&nbsp;=&nbsp;ch;
+&nbsp;&nbsp;&nbsp;&nbsp;lcd.setCursor(0,&nbsp;1);
+&nbsp;&nbsp;&nbsp;&nbsp;lcd.<span style="color: #CC6600;">write</span>(tempBuffer);   
+&nbsp;&nbsp;}
+}
+
+&nbsp;&nbsp;
+<span style="color: #7E7E7E;">/*****</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;This&nbsp;method&nbsp;polls&nbsp;the&nbsp;keyboard&nbsp;looking&nbsp;for&nbsp;a&nbsp;keystroke.&nbsp;If&nbsp;a&nbsp;character&nbsp;is&nbsp;available,&nbsp;it&nbsp;is&nbsp;added&nbsp;to&nbsp;the&nbsp;</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;keyboard&nbsp;input&nbsp;buffer.&nbsp;The&nbsp;inline&nbsp;modifier&nbsp;is&nbsp;a&nbsp;hint&nbsp;to&nbsp;the&nbsp;compiler&nbsp;to&nbsp;generate&nbsp;inline&nbsp;code&nbsp;if&nbsp;possible,</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;to&nbsp;improve&nbsp;the&nbsp;performance&nbsp;of&nbsp;the&nbsp;method.</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Parameters:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Return&nbsp;value:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*****/</span>
+inline&nbsp;<span style="color: #CC6600;">void</span> ps2poll()
+{
+&nbsp;&nbsp;<span style="color: #CC6600;">char</span> ch;
+&nbsp;&nbsp;<span style="color: #CC6600;">int</span> autoSendFlag = 0;
+&nbsp;&nbsp;
+&nbsp;&nbsp;<span style="color: #CC6600;">while</span> (kbd.<span style="color: #CC6600;">available</span>()) {
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (((bufferTail + 1) % QUEUESIZE) == bufferHead) {	<span
+style="color: #7E7E7E;">// is buffer full ?</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lcd.setCursor(0,&nbsp;0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lcd.<span style="color: #CC6600;">write</span>(buffFullError);
+#ifdef&nbsp;DEBUG
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color:
+#CC6600;">println</span>(buffFullError);
+#endif
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<span style="color: #CC6600;">else</span> { 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ch&nbsp;=&nbsp;kbd.<span style="color: #CC6600;">read</span>();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ch&nbsp;=&nbsp;toupper(ch);
+#ifdef&nbsp;DEBUG
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color:
+#CC6600;">print</span>(<span style="color: #006699;">"ch = "</span>);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color:
+#CC6600;">println</span>(ch, <span style="color: #006699;">HEX</span>);
+#endif
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (ch == 0x7f) {
+#ifdef&nbsp;DEBUG
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color:
+#CC6600;">println</span>(<span style="color: #006699;">"Read backspace"</span>);
+#endif
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">continue</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+#ifdef&nbsp;DEBUG
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color:
+#CC6600;">println</span>(ch);
+#endif
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">switch</span> (ch) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span> ESCAPEKEY:
+<span style="color: #7E7E7E;">// case '\033':</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BufferReset();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ClearLCD();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;#ifdef&nbsp;DEBUG
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color:
+#CC6600;">flush</span>();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color:
+#CC6600;">println</span>(<span style="color: #006699;">"== Buffer reset =="</span>);
+&nbsp;&nbsp;#endif
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aborted&nbsp;=&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span> PERCENTKEY:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BufferAdd(<span style="color: #006699;">"CQ CQ CQ DE W8TEE W8TEE W8TEE
+K\r\n"</span>);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span> <span style="color: #006699;">'('</span>:
+<span style="color: #7E7E7E;">// Start buffering without transmitting</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bufferActive&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DelayedTransmit();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">return</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span> <span style="color: #006699;">'#'</span>:
+<span style="color: #7E7E7E;">// Change keying speed</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ChangeSendingSpeed();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;speedChange&nbsp;=&nbsp;<span style="color: #CC6600;">true</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span> <span style="color: #006699;">'~'</span>:
+<span style="color: #7E7E7E;">// Change sidetone. Default is no tone (0)</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sideTone&nbsp;=&nbsp;!sideTone;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">return</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span> <span style="color: #006699;">'*'</span>:
+<span style="color: #7E7E7E;">// Generate random letters and numbers</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+style="color: #7E7E7E;">// Left as exercise for reader!!</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">default</span>:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BufferAdd(ch);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ShowKeystrokes(ch);&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;}
+}
+
+<span style="color: #7E7E7E;">/*****</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;This&nbsp;method&nbsp;generates&nbsp;a&nbsp;delay&nbsp;based&nbsp;on&nbsp;the&nbsp;millis()&nbsp;method&nbsp;call.&nbsp;This&nbsp;is&nbsp;the&nbsp;preferred&nbsp;way&nbsp;to&nbsp;perform&nbsp;a</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;delay&nbsp;because&nbsp;it&nbsp;doesn't&nbsp;put&nbsp;the&nbsp;board&nbsp;to&nbsp;sleep&nbsp;during&nbsp;the&nbsp;delay.</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Parameters:</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;unsigned&nbsp;ling&nbsp;ms&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;number&nbsp;of&nbsp;milliseconds&nbsp;to&nbsp;delay</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Return&nbsp;value:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*****/</span>
+<span style="color: #CC6600;">void</span> mydelay(<span style="color: #CC6600;">unsigned</span> <span style="color:
+#CC6600;">long</span> ms)
+{
+&nbsp;&nbsp;<span style="color: #CC6600;">unsigned</span> <span style="color: #CC6600;">long</span> t = <span style="color:
+#CC6600;">millis</span>();
+&nbsp;&nbsp;<span style="color: #CC6600;">while</span> (<span style="color: #CC6600;">millis</span>()-t &lt; ms) {
+&nbsp;&nbsp;&nbsp;&nbsp;ps2poll();
+&nbsp;&nbsp;}
+}
+
+<span style="color: #7E7E7E;">/*****</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;This&nbsp;method&nbsp;generates&nbsp;a&nbsp;tone&nbsp;if&nbsp;speakers&nbsp;are&nbsp;hooked&nbsp;to&nbsp;the&nbsp;system.&nbsp;The&nbsp;TONEPIN&nbsp;value&nbsp;determines&nbsp;which&nbsp;pin</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;is&nbsp;used&nbsp;to&nbsp;generate&nbsp;the&nbsp;tone.</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Parameters:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Return&nbsp;value:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*****/</span>
+<span style="color: #CC6600;">void</span> scale()
+{
+&nbsp;&nbsp;<span style="color: #CC6600;">long</span> f = 220L;
+&nbsp;&nbsp;<span style="color: #CC6600;">int</span> i;
+
+&nbsp;&nbsp;<span style="color: #CC6600;">for</span> (i=0; i&lt;=12; i++) {
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">tone</span>(TONEPIN, (<span style="color: #CC6600;">int</span>)f);
+&nbsp;&nbsp;&nbsp;&nbsp;f&nbsp;*=&nbsp;1059L;
+&nbsp;&nbsp;&nbsp;&nbsp;f&nbsp;/=&nbsp;1000L;
+#ifdef&nbsp;DEBUG
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">println</span>(f);
+#endif
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">delay</span>(300);
+&nbsp;&nbsp;}
+&nbsp;&nbsp;<span style="color: #CC6600;">noTone</span>(TONEPIN);     
+}
+
+<span style="color: #7E7E7E;">/*****</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;This&nbsp;method&nbsp;generates&nbsp;a&nbsp;single&nbsp;dit&nbsp;in&nbsp;the&nbsp;sequence&nbsp;necessary&nbsp;to&nbsp;form&nbsp;a&nbsp;character&nbsp;in&nbsp;Morse&nbsp;Code.</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Parameters:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Return&nbsp;value:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*****/</span>
+<span style="color: #CC6600;">void</span> dit()
+{&nbsp;
+&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (sideTone) {
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">digitalWrite</span>(LEDPIN, <span style="color: #006699;">HIGH</span>);
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">tone</span>(TONEPIN, SIDETONEFREQ);
+&nbsp;&nbsp;&nbsp;&nbsp;mydelay(ditlen);
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">digitalWrite</span>(LEDPIN, <span style="color: #006699;">LOW</span>);
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">noTone</span>(TONEPIN);
+&nbsp;&nbsp;&nbsp;&nbsp;mydelay(ditlen);
+&nbsp;&nbsp;}
+#ifdef&nbsp;CHARSONLY
+&nbsp;&nbsp;<span style="color: #CC6600;">return</span>;
+#endif
+
+#ifdef&nbsp;DEBUG
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">print</span>(<span style="color:
+#006699;">"."</span>);
+#endif&nbsp;
+}
+
+<span style="color: #7E7E7E;">/*****</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;This&nbsp;method&nbsp;generates&nbsp;a&nbsp;single&nbsp;dah&nbsp;in&nbsp;the&nbsp;sequence&nbsp;necessary&nbsp;to&nbsp;form&nbsp;a&nbsp;character&nbsp;in&nbsp;Morse&nbsp;Code.</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Parameters:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Return&nbsp;value:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*****/</span>
+<span style="color: #CC6600;">void</span> dah()
+{
+&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (sideTone) {
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">digitalWrite</span>(LEDPIN, <span style="color: #006699;">HIGH</span>);
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">tone</span>(TONEPIN, SIDETONEFREQ);
+&nbsp;&nbsp;&nbsp;&nbsp;mydelay(3*ditlen);
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">digitalWrite</span>(LEDPIN, <span style="color: #006699;">LOW</span>);
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">noTone</span>(TONEPIN);
+&nbsp;&nbsp;&nbsp;&nbsp;mydelay(ditlen);
+&nbsp;&nbsp;}
+#ifdef&nbsp;CHARSONLY
+&nbsp;&nbsp;<span style="color: #CC6600;">return</span>;
+#endif
+#ifdef&nbsp;DEBUG
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">print</span>(<span style="color:
+#006699;">"_"</span>);
+#endif
+}
+
+
+<span style="color: #7E7E7E;">/*****</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;This&nbsp;method&nbsp;generates&nbsp;the&nbsp;necessary&nbsp;dits&nbsp;and&nbsp;dahs&nbsp;for&nbsp;a&nbsp;particular&nbsp;code.</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Parameters:</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;char&nbsp;code&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;byte&nbsp;code&nbsp;for&nbsp;the&nbsp;letter&nbsp;or&nbsp;number&nbsp;to&nbsp;be&nbsp;sent&nbsp;as&nbsp;take&nbsp;from&nbsp;the&nbsp;ltab[]&nbsp;or&nbsp;ntab[]&nbsp;arrays.</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Return&nbsp;value:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*****/</span>
+<span style="color: #CC6600;">void</span> sendcode(<span style="color: #CC6600;">char</span> code)
+{
+&nbsp;&nbsp;<span style="color: #CC6600;">int</span> i;
+
+&nbsp;&nbsp;<span style="color: #CC6600;">for</span> (i=7; i&gt;= 0; i--) {  <span style="color: #7E7E7E;">// Look for start
+bit</span>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (code &amp; (1 &lt;&lt; i))
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;}
+&nbsp;&nbsp;<span style="color: #CC6600;">for</span> (i--; i&gt;= 0; i--) {  <span style="color: #7E7E7E;">// Remaining bits are the
+actual Morse code</span>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (code &amp; (1 &lt;&lt; i))
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dah();
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">else</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dit();
+&nbsp;&nbsp;}
+&nbsp;&nbsp;mydelay(2*ditlen);	<span style="color: #7E7E7E;">// space between letters</span>
+#ifdef&nbsp;DEBUG
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">print</span>(<span style="color:
+#006699;">""</span>);
+#endif
+}
+
+<span style="color: #7E7E7E;">/*****</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;This&nbsp;method&nbsp;translates&nbsp;and&nbsp;sends&nbsp;the&nbsp;character.</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Parameters:</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;char&nbsp;ch&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;character&nbsp;to&nbsp;be&nbsp;translated&nbsp;and&nbsp;sent</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Return&nbsp;value:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*****/</span>
+<span style="color: #CC6600;">void</span> <span style="color: #CC6600;">send</span>(<span style="color: #CC6600;">char</span> ch)
+{
+&nbsp;&nbsp;<span style="color: #CC6600;">int</span> index;
+
+&nbsp;&nbsp;ch&nbsp;=&nbsp;toupper(ch);
+&nbsp;
+&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (speedChange) {	            <span style="color: #7E7E7E;">// use new
+speed</span>
+&nbsp;&nbsp;&nbsp;&nbsp;ditlen&nbsp;=&nbsp;1200&nbsp;/&nbsp;wordsPerMinute;		
+&nbsp;&nbsp;&nbsp;&nbsp;speedChange&nbsp;=&nbsp;<span style="color: #CC6600;">false</span>;
+&nbsp;&nbsp;}&nbsp;&nbsp;
+&nbsp;&nbsp;
+&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (isalpha(ch)) {      <span style="color: #7E7E7E;">// Is it an alpha
+character?</span>
+&nbsp;&nbsp;&nbsp;&nbsp;index&nbsp;=&nbsp;ch&nbsp;-&nbsp;<span style="color: #006699;">'A'</span>;     <span style="color:
+#7E7E7E;">// Yep...Calculate an index into the letter array if a letter...</span>
+&nbsp;&nbsp;&nbsp;&nbsp;sendcode(ltab[index]);
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">return</span>;
+&nbsp;&nbsp;}
+&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (isdigit(ch)) {      <span style="color: #7E7E7E;">// Is it a digit
+character?</span>
+&nbsp;&nbsp;&nbsp;&nbsp;sendcode(ntab[ch-<span style="color: #006699;">'0'</span>]); <span style="color: #7E7E7E;">//
+Yep...Calculate an index into the numbers table if a number...</span>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">return</span>;
+&nbsp;&nbsp;}&nbsp;
+&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (ch == <span style="color: #006699;">' '</span> || ch == <span style="color:
+#006699;">'\r'</span> || ch == <span style="color: #006699;">'\n'</span>) {  <span style="color: #7E7E7E;">// Is it
+whitespace?</span>
+&nbsp;&nbsp;&nbsp;&nbsp;mydelay(4&nbsp;*&nbsp;ditlen);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+style="color: #7E7E7E;">// Yep.</span>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">return</span>;
+&nbsp;&nbsp;}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;<span style="color: #CC6600;">switch</span> (ch) {                  <span style="color: #7E7E7E;">// Punctuation and
+special characters. NOTE; Tree depth is 6, so</span>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span> <span style="color: #006699;">'.'</span>:                    <span
+style="color: #7E7E7E;">// characters max out at 7 dit/dah combinations</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sendcode(0b1010101);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span> <span style="color: #006699;">','</span>:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sendcode(0b1110011);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span>  <span style="color: #006699;">'!'</span>:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sendcode(0b1101011);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span>  <span style="color: #006699;">'?'</span>:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sendcode(0b1001100);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span>  <span style="color: #006699;">'/'</span>:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sendcode(0b110010);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span>  <span style="color: #006699;">'+'</span>:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sendcode(0b101010);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span>  <span style="color: #006699;">'-'</span>:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sendcode(0b1100001);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span>  <span style="color: #006699;">'='</span>:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sendcode(0b110001);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span>  <span style="color: #006699;">'@'</span>:               
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sendcode(0b1011010);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span> <span style="color: #006699;">'\''</span>:               <span
+style="color: #7E7E7E;">// ' apostrophe</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sendcode(0b1011110);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>; 
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span> <span style="color: #006699;">'('</span>: 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sendcode(0b110110);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span> <span style="color: #006699;">')'</span>: 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sendcode(0b1101101);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span> <span style="color: #006699;">':'</span>: 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sendcode(0b1111000);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span> <span style="color: #006699;">';'</span>: 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sendcode(0b1101010);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span> <span style="color: #006699;">'"'</span>: 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sendcode(0b1010010);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">default</span>:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;}
+
+#ifdef&nbsp;DEBUG
+&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (!aborted) {
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">print</span>(ch);
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (ch == 13) 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color:
+#CC6600;">print</span>((<span style="color: #CC6600;">char</span>) 10);
+&nbsp;&nbsp;}
+#endif
+&nbsp;&nbsp;aborted&nbsp;=&nbsp;0;
+}
+
+
+
+<span style="color: #7E7E7E;">/*****</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;This&nbsp;method&nbsp;flashes&nbsp;the&nbsp;LED&nbsp;on&nbsp;pin&nbsp;13&nbsp;if&nbsp;the&nbsp;input&nbsp;buffer&nbsp;is&nbsp;close&nbsp;to&nbsp;being&nbsp;full.</span>
+<span style="color: #7E7E7E;">&nbsp;*</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Parameters:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;&nbsp;&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Return&nbsp;value:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;&nbsp;&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*****/</span>
+
+<span style="color: #CC6600;">void</span> FlashBufferFullWarning()
+{
+&nbsp;&nbsp;<span style="color: #CC6600;">int</span> i;
+#ifdef&nbsp;DEBUG
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">print</span>(<span style="color:
+#006699;">"************* Approaching buffer full =============="</span>);
+&nbsp;&nbsp;<span style="color: #7E7E7E;">//Serial.println(longMessageProcessing);</span>
+#endif
+
+&nbsp;&nbsp;<span style="color: #CC6600;">for</span> (i = 0; i &lt; 10; i++) {
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">digitalWrite</span>(LEDPIN, <span style="color: #006699;">HIGH</span>);  <span
+style="color: #7E7E7E;">// Visual</span>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">delay</span>(100);
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">digitalWrite</span>(LEDPIN, <span style="color: #006699;">LOW</span>);
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">delay</span>(100);
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">tone</span>(TONEPIN, SIDETONEFREQ);         <span style="color: #7E7E7E;">//
+Audio...if available</span>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">delay</span>(100);
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">noTone</span>(TONEPIN);
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">delay</span>(100);
+&nbsp;&nbsp;}
+}
+
+<span style="color: #7E7E7E;">/*****</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;This&nbsp;method&nbsp;buffer&nbsp;all&nbsp;keystrokes&nbsp;after&nbsp;reading&nbsp;the&nbsp;leading&nbsp;'('&nbsp;until&nbsp;it&nbsp;reads&nbsp;a&nbsp;')'.&nbsp;At&nbsp;that</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;time,&nbsp;the&nbsp;buffer&nbsp;is&nbsp;sent&nbsp;to&nbsp;the&nbsp;transmitter.</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Parameters:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;&nbsp;&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Return&nbsp;value:</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;&nbsp;&nbsp;int&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;number&nbsp;of&nbsp;characters&nbsp;buffered.</span>
+<span style="color: #7E7E7E;">&nbsp;*****/</span>
+
+<span style="color: #CC6600;">int</span> DelayedTransmit()
+{
+&nbsp;&nbsp;<span style="color: #CC6600;">char</span> ch;
+&nbsp;&nbsp;<span style="color: #CC6600;">int</span> i;
+
+&nbsp;&nbsp;memset(buff,&nbsp;<span style="color: #006699;">'\0'</span>, sizeof(<span style="color: #CC6600;">char</span>));
+&nbsp;&nbsp;
+&nbsp;&nbsp;bufferTail&nbsp;=&nbsp;0;
+&nbsp;&nbsp;BufferReset();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:
+#7E7E7E;">// Clear the buffer and start over...</span>
+#ifdef&nbsp;DEBUG
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">println</span>(<span style="color:
+#006699;">"####  in DelayedTransmit()"</span>);
+#endif&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+&nbsp;&nbsp;<span style="color: #CC6600;">while</span> (<span style="color: #CC6600;">true</span>) {
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (kbd.<span style="color: #CC6600;">available</span>()) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ch&nbsp;=&nbsp;kbd.<span style="color: #CC6600;">read</span>();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (ch == ESCAPEKEY) {  <span style="color: #7E7E7E;">//
+They want to terminate message</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BufferReset();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:
+#7E7E7E;">// Clear all and start over</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">return</span> 0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (ch == <span style="color: #006699;">'('</span>) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BufferReset();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:
+#7E7E7E;">// Clear all and start over</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">continue</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+<span style="color: #7E7E7E;">//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ShowKeystrokes(ch);</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #7E7E7E;">//charCount++;</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (ch == <span style="color: #006699;">')'</span> ||
+charCount == QUEUEMASK || ch == NEWLINE) { <span style="color: #7E7E7E;">// Is long message finished or terminated?</span>
+#ifdef&nbsp;DEBUG
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">print</span>(<span style="color:
+#006699;">"#### after closed:  charCount = "</span>);
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">println</span>(charCount);
+#endif&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bufferActive&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lcdColPosition&nbsp;=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lcd.clear();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lcd.setCursor(0,1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">for</span> (i = 0; i &lt; charCount; i++) {
+&nbsp;#ifdef&nbsp;DEBUG
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">print</span>(<span style="color:
+#006699;">"In for send[i] = "</span>);
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">print</span>(buff[i]);
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">print</span>(<span style="color:
+#006699;">"  i = "</span>);
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">println</span>(i);
+#endif&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ShowKeystrokes(buff[i]);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">send</span>(buff[i]);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BufferReset();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+style="color: #7E7E7E;">// Clear the buffer and start over...</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<span style="color: #CC6600;">else</span> {
+#ifdef&nbsp;DEBUG
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">print</span>(<span style="color:
+#006699;">"--&gt; charCount = "</span>);
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">print</span>(charCount);
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">print</span>(<span style="color:
+#006699;">" character = "</span>);
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">println</span>(ch);
+#endif&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ShowKeystrokes(ch);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;buff[charCount++]&nbsp;=&nbsp;ch;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (charCount &gt; (QUEUEMASK - 20)) {   <span
+style="color: #7E7E7E;">// Approaching full buffer</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FlashBufferFullWarning();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;}
+&nbsp;&nbsp;<span style="color: #CC6600;">return</span> charCount;
+}
+
+<span style="color: #7E7E7E;">/*****</span>
+<span style="color:
+#7E7E7E;">&nbsp;*&nbsp;This&nbsp;function&nbsp;allows&nbsp;the&nbsp;sending&nbsp;speed&nbsp;to&nbsp;change</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Parameters:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;&nbsp;&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Return&nbsp;value:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;&nbsp;&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*****/</span>
+<span style="color: #CC6600;">void</span> ChangeSendingSpeed()
+{
+&nbsp;&nbsp;<span style="color: #CC6600;">char</span> ch;
+&nbsp;&nbsp;
+&nbsp;&nbsp;<span style="color: #CC6600;">int</span> wereDone = 0;
+
+#ifdef&nbsp;DEBUG&nbsp;&nbsp;
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">print</span>(<span style="color:
+#006699;">" wordsPerMinute at start ="</span>);
+&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color: #CC6600;">println</span>(wordsPerMinute);     
+#endif
+&nbsp;&nbsp;<span style="color: #CC6600;">while</span> (<span style="color: #CC6600;">true</span>) {
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (kbd.<span style="color: #CC6600;">available</span>()) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ch=kbd.<span style="color: #CC6600;">read</span>();
+#ifdef&nbsp;DEBUG&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color:
+#CC6600;">print</span>(<span style="color: #006699;">"Speed change ch ="</span>);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;"><b>Serial</b></span>.<span style="color:
+#CC6600;">println</span>(ch);
+#endif
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">switch</span> (ch) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span> <span style="color:
+#006699;">'&gt;'</span>:            <span style="color: #7E7E7E;">// Increase WPM by 1</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;wordsPerMinute++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span> <span style="color:
+#006699;">'&lt;'</span>:            <span style="color: #7E7E7E;">// Decrease WPM by 1</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;wordsPerMinute--;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">case</span> <span style="color: #006699;">'#'</span>:
+<span style="color: #7E7E7E;">// All changes are complete</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;wereDone&nbsp;=&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">default</span>:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">if</span> (wereDone)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #CC6600;">break</span>;
+&nbsp;&nbsp;}
+&nbsp;&nbsp;ditlen&nbsp;=&nbsp;1200&nbsp;/&nbsp;wordsPerMinute;
+}
+
+<span style="color: #7E7E7E;">/*****</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;This&nbsp;method&nbsp;simply&nbsp;clears&nbsp;the&nbsp;LCD&nbsp;display</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Parameters:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;&nbsp;&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;Return&nbsp;value:</span>
+<span style="color: #7E7E7E;">&nbsp;*&nbsp;&nbsp;&nbsp;void</span>
+<span style="color: #7E7E7E;">&nbsp;*****/</span>
+<span style="color: #CC6600;">void</span> ClearLCD()
+{
+&nbsp;&nbsp;lcd.clear();
+&nbsp;&nbsp;lcd.setCursor(0,&nbsp;0);
+}
+</pre>

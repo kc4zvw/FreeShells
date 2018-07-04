@@ -1,0 +1,197 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+  <meta name="generator" content="HTML Tidy, see www.w3.org">
+  <meta http-equiv="Content-Type" content="text/html; charset=us-ascii">
+  <link rel="stylesheet" type="text/css" href="css/style2.css">
+
+  <title>A Series Resistance meter</title>
+
+  <style type="text/css">
+    div.c1 {margin-left: 2em}
+  </style>
+</head>
+
+<body>
+  <h1 class='main'>A Series Resistance Meter using Operational Amplifiers</h1>
+
+  <h2 class='c1'>Introduction:</h2>
+  <p class="c1">add something here</p>
+  <p class="c1">The back issue of QST is <a href="http://www.nxtbook.com/nxtbooks/arrl/qst_201404/index.php">here</a>.</p>
+  <img src="images/panel-meter.jpg" alt="meter face" height="63" width="80"> panel meter</img>
+
+  <h2 class='c1'>Materials:</h2>
+  <p class="c1">
+  <table cellspacing="0" cellpadding="3" summary="parts listing">
+  <caption>Chute Meter Project</caption>
+  <tr>
+  <td align="left"   style=" font-size:11pt;"><b>Qty.</b></td>
+  <td align="center" style=" font-size:11pt;"><b>Description</b></td>
+  <td align="left"   style=" font-size:11pt;"><b>Part Number:</b></td>
+  <td align="left"   style=" font-size:11pt;"><b>Mouser #</b></td>
+  <td align="left"   style=" font-size:11pt;"><b>Price (USD)</b></td>
+  </tr>
+  <tr>
+  <td  valign="bottom"  align="right"  style=" font-size:11pt;">4</td>
+  <td  valign="bottom"  align="left"  style=" font-size:11pt;">Aluminum Electrolytic Capacitors - Leaded 50volts 1uF 4x7 20% 1.5LS</td>
+  <td  valign="bottom"  align="left"  style=" font-size:11pt;">C1,C2,C5,C6</td>
+  <td  valign="bottom"  align="left"  style=" font-size:11pt;">647-USR1H010MDD</td>
+  <td  valign="bottom"  align="left"  style=" font-size:11pt;">$0.23</td>
+  <td  style=""></td>
+  </tr>
+  <tr>
+  <td  valign="bottom"  align="right"  style=" font-size:11pt;">1</td>
+  <td  valign="bottom"  align="left"  style=" font-size:11pt;">Ceramic Disc Capacitors 50V 1000pF Z5V +80%/-20% Tol</td>
+  <td  valign="bottom"  align="left"  style=" font-size:11pt;">C3</td>
+  <td  valign="bottom"  align="left"  style=" font-size:11pt;">140-50Q5-102Z-RC</td>
+  <td  valign="bottom"  align="left"  style=" font-size:11pt;">$0.09</td>
+  <td  style=""></td>
+  </tr>
+  <tr>
+  <td align="right" style=" font-size:11pt;">1</td>
+  <td align="left"  style=" font-size:11pt;">Ceramic Disc Capacitors 1Kvolts .1uF 20% .375LS Z5U QT REQD</td>
+  <td align="left"  style=" font-size:11pt;">C4</td>
+  <td align="left"  style=" font-size:11pt;">75-565R10GAP10</td>
+  <td align="left"  style=" font-size:11pt;">$4.50</td>
+  <td style=""></td>
+  </tr>
+  <tr>
+  <td align="right"  style=" font-size:11pt;">2</td>
+  <td align="left"  style=" font-size:11pt;">Rectifiers Vr/1000V Io/1A</td>
+  <td align="left"  style=" font-size:11pt;">D1,D2</td>
+  <td align="left"  style=" font-size:11pt;">512-1N4007</td>
+  <td align="left"  style=" font-size:11pt;">$0.14</td>
+  <td style=""></td>
+  </tr>
+  <tr>
+  <td align="right"  style=" font-size:11pt;">1</td>
+  <td align="left"  style=" font-size:11pt;">Bipolar Transistors - BJT PNP Gen Pur SS</td>
+  <td align="left"  style=" font-size:11pt;">Q1</td>
+  <td align="left"  style=" font-size:11pt;">610-2N3906</td>
+  <td align="left"  style=" font-size:11pt;">$0.41</td>
+  <td style=""></td>
+  </tr>
+  <tr>
+  <td align="right"  style=" font-size:11pt;">1</td>
+  <td align="left"  style=" font-size:11pt;">Bipolar Transistors - BJT NPN Gen Pur SS</td>
+  <td align="left"  style=" font-size:11pt;">Q2</td>
+  <td align="left"  style=" font-size:11pt;">610-2N3904</td>
+  <td align="left"  style=" font-size:11pt;">$0.41</td>
+  <td style=""></td>
+  </tr>
+<tr>
+<td  valign="bottom"  align="right"  style=" font-size:11pt;">4</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">Carbon Film Resistors - Through Hole 10KOhm 1/2W 1200PPM</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">R1,R2,R4,R5</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">279-CFR50J10K</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">$0.10</td>
+<td  style=""></td>
+</tr>
+<tr>
+<td  valign="bottom"  align="right"  style=" font-size:11pt;">1</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">Carbon Film Resistors - Through Hole 2.4KOhm 1/2W 1200PPM</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">R3</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">279-CFR50J2K4</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">$0.11</td>
+<td  style=""></td>
+</tr>
+<tr>
+<td  valign="bottom"  align="right"  style=" font-size:11pt;">3</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">Carbon Film Resistors - Through Hole 27Kohms 0.05</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">R6,R14,R15</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">293-27K-RC</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">$0.15</td>
+<td  style=""></td>
+</tr>
+<tr>
+<td  valign="bottom"  align="right"  style=" font-size:11pt;">1</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">Carbon Film Resistors - Through Hole 4.7Kohms 5%</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">R7</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">293-4.7K-RC</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">$0.15</td>
+<td  style=""></td>
+</tr>
+<tr>
+<td  valign="bottom"  align="right"  style=" font-size:11pt;">4</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">Carbon Film Resistors - Through Hole 1Kohms 0.05</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">R8,R9,R12,R13</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">293-1K-RC</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">$0.15</td>
+<td  style=""></td>
+</tr>
+<tr>
+<td  valign="bottom"  align="right"  style=" font-size:11pt;">2</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">Carbon Film Resistors - Through Hole 22ohms 0.05</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">R10,R11</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">293-22-RC</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">$0.15</td>
+<td  style=""></td>
+</tr>
+<tr>
+<td  valign="bottom"  align="right"  style=" font-size:11pt;">1</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">Carbon Film Resistors - Through Hole 47Kohms 5%</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">R16</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">293-47K-RC</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">$0.15</td>
+<td  style=""></td>
+</tr>
+<tr>
+<td  valign="bottom"  align="right"  style=" font-size:11pt;">1</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">Carbon Film Resistors - Through Hole 820ohms 0.05</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">R18</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">293-820-RC</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">$0.15</td>
+<td  style=""></td>
+</tr>
+<tr>
+<td  valign="bottom"  align="right"  style=" font-size:11pt;">1</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">Carbon Film Resistors - Through Hole 15Kohms 0.05</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">R19</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">293-15K-RC</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">$0.15</td>
+<td  style=""></td>
+</tr>
+<tr>
+<td  valign="bottom"  align="right"  style=" font-size:11pt;">1</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">Carbon Film Resistors - Through Hole 68ohms 0.05</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">R20</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">293-68-RC</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">$0.15</td>
+<td  style=""></td>
+</tr>
+<tr>
+<td  valign="bottom"  align="right"  style=" font-size:11pt;">2</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">Operational Amplifiers - Op Amps JFET Input Low Noise</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">U1,U2</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">595-TL082CP</td>
+<td  valign="bottom"  align="left"  style=" font-size:11pt;">$0.83</td>
+<td  style=""></td>
+</tr>
+
+  </table>
+  </p>
+  <p><a href="">Wordpress blog entry</a></p>
+
+  <h2 class='c1'>Build Notes:</h2>
+  <p class="c1">add something here</p>
+
+  <h2 class='c1'>Operation Notes:</h2>
+  <p class="c1">add something here</p>
+
+  <h2 class='c1'>References:</h2>
+  <p class="c1">QST : April 2014 : meter project by David L. Chute <a href="http://www.qrz.com/db/KG4BZW">KG4BZW</a></p>
+
+  <ol>
+    <li><a href="http://www.arrl.org/files/file/QST%20Binaries/APR2014/Chute%20-%20Supplemental%20Files.zip">files: QST in Depth</a></li>
+    <li><a href="http://www.allelectronics.com/make-a-store/item/pmd-100ua/100-ua-dc-panel-meter/1.html">DC Panel Meter</a></li>
+  </ol>
+
+  <div class="c1">
+    <a href="index.html">return to main menu</a>
+  </div>
+
+  <hr>
+  Revised: Sunday, March 22, 2015 at 23:09:17 PM (EDT)
+</body>
+</html>
